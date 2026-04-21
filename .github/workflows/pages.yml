@@ -1,0 +1,35 @@
+name: Deploy GitHub Pages
+
+on:
+  push:
+    branches: [develop]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Không cancel deploy đang chạy — để khỏi đẩy artifact nửa chừng lên Pages.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/configure-pages@v5
+
+      # Chỉ upload thư mục app/ (không cần build — app là static HTML/CSS/JS)
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./app
+
+      - id: deployment
+        uses: actions/deploy-pages@v4
