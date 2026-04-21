@@ -1,16 +1,29 @@
 <!doctype html>
-<html lang="vi" data-theme="signal">
+<html lang="vi">
 <head>
 <meta charset="utf-8">
 <title>Âm Lịch // NULLSECT</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="description" content="Âm lịch Việt Nam — lịch âm, can chi, tiết khí, giờ hoàng đạo, ghi chú cá nhân.">
 
+<!-- PWA: manifest-only setup (no service worker → no offline cache, but the
+     app is installable on iOS Home Screen and shows the proper icon/theme
+     chrome on Android/desktop Chrome when "Install app" is triggered
+     manually. Install-prompt auto-fire on Chrome/Android requires a SW;
+     intentionally opted out per project scope. -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#050507">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="icon" href="icon-192.png" sizes="192x192" type="image/png">
+<link rel="apple-touch-icon" href="icon-apple-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Âm Lịch">
+
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700&display=swap">
 
 <link rel="stylesheet" href="css/tokens.css">
-<link rel="stylesheet" href="css/calendar.css">
 
 <style>
   /* App shell — layout chrome. Design tokens come from tokens.css. */
@@ -90,13 +103,112 @@
     position: relative;
   }
 
-  /* Responsive — tighter padding on small viewports */
-  @media (max-width: 720px) {
-    body { padding: 12px; }
-    #page { border-width: 2px; box-shadow: 6px 6px 0 0 var(--magenta); }
+  /* Donate chip — sibling control to theme chip, links to donate.aiocean.io.
+     Mirrors the theme chip's shape; primary accent is magenta (theme's is lime).
+     Colocated with theme chip: shares the same @media override blocks below. */
+  #ns-donate-chip {
+    position: relative;
+    margin: 8px 8px 8px 0;
+    align-self: center;
+    font-family: var(--f-mono);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--ink);
+    background: var(--bg-2);
+    border: 2px solid var(--line);
+    padding: 7px 10px 7px 8px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 4px 4px 0 0 var(--magenta);
+    transition: transform 80ms ease, box-shadow 80ms ease;
+    text-decoration: none;
   }
+  #ns-donate-chip:hover {
+    transform: translate(-1px, -1px);
+    box-shadow: 5px 5px 0 0 var(--magenta);
+    color: var(--magenta);
+  }
+  #ns-donate-chip .ns-donate-ico {
+    width: 10px;
+    height: 10px;
+    background: var(--magenta);
+    box-shadow: 0 0 8px var(--magenta);
+  }
+  #ns-donate-chip .ns-donate-k {
+    color: var(--ink-dim);
+    border-left: 1px solid var(--ink-mute);
+    padding-left: 8px;
+    margin-left: 4px;
+    font-size: 10px;
+  }
+
+  /* ─ Responsive ────────────────────────────────────────────────────────
+     Desktop (>1024px): fit-viewport "book" — body overflow hidden, #page
+     and #view constrained to viewport height. Inner views manage their own
+     scrolling/sizing via internal flex rules.
+
+     Mobile/tablet (≤1024px): relax that constraint so the page grows with
+     content and the body scrolls naturally. Inner views switch from
+     fixed-height with internal overflow to content-sized with visible
+     overflow — otherwise long content (year mosaic, day checklist) is
+     trapped inside an unscrollable pane on touch devices. */
+  @media (max-width: 1024px) {
+    html, body { height: auto; }
+    body {
+      overflow: visible;
+      min-height: 100vh;
+    }
+    #page {
+      overflow: visible;
+      flex: 0 0 auto;
+    }
+    #view {
+      overflow: visible;
+      flex: 0 0 auto;
+      min-height: 0;
+    }
+  }
+
+  @media (max-width: 768px) {
+    body { padding: 14px; }
+    #page { border-width: 2px; box-shadow: 6px 6px 0 0 var(--magenta); }
+    /* Tab bar compressed — still single row, never wrap or scroll */
+    .tab { padding: 11px 14px; font-size: 11px; letter-spacing: 0.1em; gap: 8px; }
+    .tab .tab-k { font-size: 9px; letter-spacing: 0.16em; }
+    .tab-meta { display: none; }
+    #ns-donate-chip {
+      margin: 6px 8px 6px 0;
+      padding: 6px 8px;
+      font-size: 10px;
+      box-shadow: 3px 3px 0 0 var(--magenta);
+    }
+    #ns-donate-chip .ns-donate-k { display: none; }
+  }
+
   @media (max-width: 480px) {
     body { padding: 8px; }
+    #page { box-shadow: 4px 4px 0 0 var(--magenta); }
+    /* Tab row fits 3 tabs + chip on a 360-wide phone without wrap.
+       Shrink aggressively but preserve tap target height (≥ 36px). */
+    .tab { padding: 10px 10px; font-size: 10px; letter-spacing: 0.08em; gap: 6px; }
+    .tab .tab-k { display: none; }
+    #ns-donate-chip {
+      margin: 5px 4px 5px 0;
+      padding: 5px 7px;
+      font-size: 9px;
+      letter-spacing: 0.08em;
+      gap: 6px;
+    }
+  }
+
+  @media (max-width: 360px) {
+    body { padding: 6px; }
+    .tab { padding: 9px 8px; font-size: 9px; letter-spacing: 0.06em; }
+    #ns-donate-chip { padding: 5px 6px; font-size: 8px; }
   }
 
   /* month view navbtn (shared in hero) */
@@ -145,15 +257,6 @@
     background: var(--lime);
     border-color: var(--lime);
     color: #0a0a0b;
-  }
-
-  /* Theme chip (injected by theme code below) — positioned inside tab bar */
-  #ns-theme-chip {
-    position: relative;
-    top: auto;
-    right: auto;
-    margin: 8px 16px 8px 0;
-    align-self: center;
   }
 
   /* ─ TODAY: keep interior clean, add a solid lime sticker corner ───────
@@ -438,6 +541,13 @@
   .DD-todo-ghost .DD-todo-text::placeholder { color: var(--ink-mute); }
   .DD-todo-ghost .DD-todo-text:focus::placeholder { color: transparent; }
 </style>
+
+<!-- calendar.css is loaded AFTER the inline shell <style> so that responsive
+     media queries at the bottom of calendar.css can override the view-specific
+     base rules defined inline above (e.g. .DD-specs 4-col, .DD-body-2col
+     1.3fr/1fr). Both files use equal-specificity class selectors, so the later
+     one wins inside matching @media blocks. -->
+<link rel="stylesheet" href="css/calendar.css">
 </head>
 <body>
 
@@ -461,80 +571,25 @@
 <!-- router + mount -->
 <script src="js/app.js"></script>
 
-<!-- theme toggle chip (signal ↔ void) -->
+<!-- donate chip → donate.aiocean.io. Appended to tab bar on ready. -->
 <script>
 (function () {
-  const KEY = 'nullsect:theme';
-  const THEMES = ['signal', 'void'];
-  function getTheme() {
-    const t = localStorage.getItem(KEY);
-    return THEMES.includes(t) ? t : 'signal';
-  }
-  function setTheme(t) {
-    document.documentElement.setAttribute('data-theme', t);
-    localStorage.setItem(KEY, t);
-    const lbl = document.querySelector('#ns-theme-chip .ns-theme-lbl');
-    if (lbl) lbl.textContent = t.toUpperCase();
-  }
-  document.documentElement.setAttribute('data-theme', getTheme());
-
   function build() {
-    const chip = document.createElement('button');
-    chip.id = 'ns-theme-chip';
-    chip.type = 'button';
-    chip.setAttribute('aria-label', 'toggle theme');
-    chip.innerHTML = `
-      <style>
-        #ns-theme-chip {
-          font-family: var(--f-mono);
-          font-size: 11px; font-weight: 700;
-          text-transform: uppercase; letter-spacing: 0.12em;
-          color: var(--ink);
-          background: var(--bg-2);
-          border: 2px solid var(--line);
-          padding: 7px 10px 7px 8px;
-          cursor: pointer;
-          display: inline-flex; align-items: center; gap: 8px;
-          box-shadow: 4px 4px 0 0 var(--magenta);
-          transition: transform 80ms ease, box-shadow 80ms ease;
-        }
-        #ns-theme-chip:hover {
-          transform: translate(-1px,-1px);
-          box-shadow: 5px 5px 0 0 var(--magenta);
-        }
-        #ns-theme-chip .ns-theme-ico {
-          width: 10px; height: 10px;
-          background: var(--lime);
-          box-shadow: 0 0 8px var(--lime);
-        }
-        [data-theme="void"] #ns-theme-chip .ns-theme-ico {
-          background: var(--magenta);
-          box-shadow: 0 0 10px var(--magenta);
-        }
-        #ns-theme-chip .ns-theme-k {
-          color: var(--ink-dim);
-          border-left: 1px solid var(--ink-mute);
-          padding-left: 8px; margin-left: 4px;
-          font-size: 10px;
-        }
-      </style>
-      <span class="ns-theme-ico"></span>
-      <span class="ns-theme-lbl">${getTheme().toUpperCase()}</span>
-      <span class="ns-theme-k">⇧D</span>
+    const tabs = document.getElementById('tabs');
+    if (!tabs) return;
+    const a = document.createElement('a');
+    a.id = 'ns-donate-chip';
+    a.href = 'https://donate.aiocean.io/';
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    a.setAttribute('aria-label', 'Ủng hộ tác giả tại donate.aiocean.io');
+    a.innerHTML = `
+      <span class="ns-donate-ico"></span>
+      <span class="ns-donate-lbl">DONATE</span>
+      <span class="ns-donate-k">↗</span>
     `;
-    chip.addEventListener('click', () => setTheme(getTheme() === 'signal' ? 'void' : 'signal'));
-    document.getElementById('tabs').appendChild(chip);
+    tabs.appendChild(a);
   }
-
-  window.addEventListener('keydown', (e) => {
-    if (!e.shiftKey || e.metaKey || e.ctrlKey || e.altKey) return;
-    if (e.key !== 'D' && e.key !== 'd') return;
-    const t = e.target;
-    if (t && /^(input|textarea|select)$/i.test(t.tagName)) return;
-    e.preventDefault();
-    setTheme(getTheme() === 'signal' ? 'void' : 'signal');
-  });
-
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', build);
   else build();
 })();

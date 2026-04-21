@@ -15,12 +15,18 @@
   function renderTabs() {
     const bar = document.getElementById('tabs');
     const route = AL.currentRoute();
+    // Preserve the donate chip across re-renders. The chip is appended by a
+    // separate IIFE (at DOMContentLoaded); without this save-restore the
+    // next hash change would wipe it via innerHTML and it would never come
+    // back (the chip IIFE only runs once).
+    const chip = document.getElementById('ns-donate-chip');
     bar.innerHTML = Object.entries(views).map(([k, v]) =>
       `<button class="tab ${k === route ? 'on' : ''}" data-route="${k}">
         <span class="tab-k">${k === 'month' ? '01' : k === 'day' ? '02' : '03'}</span>
         <span class="tab-l">${v.label}</span>
       </button>`
     ).join('') + `<div class="tab-meta">// ÂM LỊCH · NULLSECT</div>`;
+    if (chip) bar.appendChild(chip);
   }
 
   function mount(route) {

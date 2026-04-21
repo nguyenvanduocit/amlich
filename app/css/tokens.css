@@ -1,5 +1,5 @@
 /* NULLSECT// — cyberpunk-brutalism tokens */
-:root, [data-theme="signal"] {
+:root {
   /* core palette — deep dark cyberpunk (SIGNAL mode, default) */
   --bg:        #050507;
   --bg-2:      #0d0d11;
@@ -36,31 +36,6 @@
   --radius:   0px;
 }
 
-/* VOID mode — lights-off, crushed blacks, magenta-dominant, CRT scanlines on */
-[data-theme="void"] {
-  --bg:        #000000;
-  --bg-2:      #070308;
-  --bg-3:      #0c060e;
-  --ink:       #e6d8ea;
-  --ink-dim:   #e4d8e8;
-  --ink-mute:  #e0d2e6;
-  --line:      #8b3fb3;
-
-  --lime:      #a8d622;
-  --lime-2:    #82a81a;
-  --magenta:   #ff007a;
-  --magenta-2: #c4005f;
-  --cyan:      #00d4ff;
-  --amber:     #ff8a00;
-  --red:       #ff2a6d;
-
-  --grid-tint: rgba(255,0,122,0.045);
-  --bg-glow-a: rgba(255,0,122,0.10);
-  --bg-glow-b: rgba(0,212,255,0.07);
-
-  --scan-opacity: 0.18;
-}
-
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; }
 body {
@@ -93,15 +68,6 @@ body::before {
   opacity: var(--scan-opacity, 0);
   mix-blend-mode: multiply;
 }
-/* subtle vignette in void mode */
-[data-theme="void"] body::after, body[data-theme="void"]::after {
-  content: '';
-  position: fixed; inset: 0;
-  pointer-events: none;
-  z-index: 9997;
-  background: radial-gradient(ellipse at center, transparent 45%, rgba(0,0,0,0.55) 100%);
-}
-
 /* type scale */
 .display {
   font-family: var(--f-display);

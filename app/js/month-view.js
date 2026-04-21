@@ -71,6 +71,8 @@
       <span class="dot">◆</span>
       <span>▚▚ signal/noise · v0.4.2</span>
       <span class="dot">◆</span>
+      <span><b>♥ TIP JAR</b> <a href="https://donate.aiocean.io/" target="_blank" rel="noopener noreferrer">donate.aiocean.io</a></span>
+      <span class="dot">◆</span>
     `;
     return `<div class="vA-ticker"><div class="vA-ticker-inner">${chunk}${chunk}</div></div>`;
   }

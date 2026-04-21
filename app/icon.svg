@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- NULLSECT brutalist icon — mirrors the app's signature #page frame:
+     lime block + magenta offset shadow on a crushed-black canvas, with
+     a dark horizontal slash that evokes a calendar cell separator.
+     Designed safe-zone-friendly for PWA maskable: important content
+     stays within the inner ~60% of the 512px canvas, so circle/squircle
+     masks (Android/Chrome launchers) never clip the block. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" shape-rendering="crispEdges">
+  <rect width="512" height="512" fill="#050507"/>
+  <rect x="140" y="140" width="280" height="280" fill="#ff2bd6"/>
+  <rect x="100" y="100" width="280" height="280" fill="#caff33"/>
+  <rect x="130" y="220" width="220" height="40" fill="#050507"/>
+</svg>
