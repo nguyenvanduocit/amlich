@@ -404,25 +404,39 @@
   .DD-todo-del:focus { opacity: 1; }
   .DD-todo-del:hover { color: var(--red); }
 
-  .DD-todo-add {
-    font-family: var(--f-mono);
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    color: var(--ink-dim);
-    background: transparent;
-    border: 2px dashed var(--ink-mute);
-    padding: 8px 12px;
-    cursor: pointer;
-    text-transform: uppercase;
-    text-align: left;
-    transition: all 80ms ease;
-    flex: 0 0 auto;
+  /* Ghost row — permanent placeholder at the top of the list.
+     Typing + Enter (or blur) commits as a new todo. */
+  .DD-todo-ghost {
+    border-bottom: 2px dashed var(--ink-mute);
+    padding-bottom: 8px;
+    margin-bottom: 4px;
   }
-  .DD-todo-add:hover {
+  .DD-todo-check-ghost {
+    width: 16px;
+    height: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px dashed var(--ink-mute);
+    color: var(--ink-mute);
+    font-size: 14px;
+    font-family: var(--f-mono);
+    font-weight: 700;
+    user-select: none;
+    line-height: 1;
+    transition: border-color 80ms ease, color 80ms ease;
+  }
+  .DD-todo-ghost:focus-within .DD-todo-check-ghost {
     border-color: var(--lime);
+    border-style: solid;
     color: var(--lime);
   }
+  .DD-todo-ghost .DD-todo-text {
+    color: var(--ink-dim);
+  }
+  .DD-todo-ghost .DD-todo-text:focus { color: var(--ink); }
+  .DD-todo-ghost .DD-todo-text::placeholder { color: var(--ink-mute); }
+  .DD-todo-ghost .DD-todo-text:focus::placeholder { color: transparent; }
 </style>
 </head>
 <body>

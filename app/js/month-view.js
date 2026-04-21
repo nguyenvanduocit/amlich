@@ -155,12 +155,12 @@
     rootEl.innerHTML = `
       <div class="vA">
         ${buildHeroHTML(today)}
+        ${buildStatsHTML(stats, wdRemain, nextH)}
         ${buildTickerHTML(today, nextH, wdRemain)}
         <div class="vA-grid">
           ${dowHeader}
           ${cells.map(c => buildCellHTML(c, today, sel)).join('')}
         </div>
-        ${buildStatsHTML(stats, wdRemain, nextH)}
       </div>
     `;
   }

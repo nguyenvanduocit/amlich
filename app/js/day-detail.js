@@ -13,6 +13,10 @@
   let saveTimer = null;
   // In-memory mirror of the current day's note data, shared across handlers.
   let noteState = null;
+  // Reentrancy guard for commitGhost — prevents double-insert when an event
+  // fires twice in quick succession (e.g. IME composition end + Enter keydown,
+  // or focusout arriving while Enter is still processing).
+  let committing = false;
 
   function escape(s) { return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
 
@@ -89,6 +93,15 @@
       </div>`;
   }
 
+  function ghostRowHTML() {
+    return `
+      <div class="DD-todo DD-todo-ghost" data-role="ghostrow">
+        <span class="DD-todo-check-ghost" aria-hidden="true">+</span>
+        <input class="DD-todo-text" type="text" data-role="newtodo" placeholder="thêm việc cần làm... (↵ enter để lưu)">
+        <span></span>
+      </div>`;
+  }
+
   function checklistHTML(todos) {
     const done = todos.filter(t => t.done).length;
     const rows = todos.map(todoRowHTML).join('');
@@ -100,8 +113,10 @@
           <span class="DD-todo-count" data-role="count">${done}/${todos.length}</span>
         </div>
         <div class="DD-todo-progress"><div class="DD-todo-bar" data-role="progress" style="width:${pct}%"></div></div>
-        <div class="DD-todos" data-role="todos">${rows}</div>
-        <button class="DD-todo-add" data-role="add">+ thêm việc cần làm</button>
+        <div class="DD-todos" data-role="todos">
+          ${ghostRowHTML()}
+          ${rows}
+        </div>
       </div>`;
   }
 
@@ -197,23 +212,6 @@
       return;
     }
 
-    // + add todo
-    if (e.target.matches('[data-role="add"]')) {
-      if (!noteState) return;
-      const t = { id: AL.uid(), content: '', done: false };
-      noteState.todos.push(t);
-      const todosEl = rootEl.querySelector('[data-role="todos"]');
-      if (todosEl) {
-        todosEl.insertAdjacentHTML('beforeend', todoRowHTML(t));
-        const added = todosEl.lastElementChild;
-        const input = added && added.querySelector('[data-role="text"]');
-        if (input) input.focus();
-      }
-      updateCountAndBar();
-      scheduleSave();
-      return;
-    }
-
     // × delete todo
     const del = e.target.closest('[data-role="delete"]');
     if (del) {
@@ -270,31 +268,50 @@
     }
   }
 
-  function handleKeydown(e) {
-    // Enter on a todo text input → create a new todo below and focus it.
-    if (e.target.matches('[data-role="text"]') && e.key === 'Enter') {
-      e.preventDefault();
-      if (!noteState) return;
-      const row = e.target.closest('.DD-todo');
-      const id = row && row.dataset.id;
-      const idx = noteState.todos.findIndex(x => x.id === id);
-      const t = { id: AL.uid(), content: '', done: false };
-      const pos = idx >= 0 ? idx + 1 : noteState.todos.length;
-      noteState.todos.splice(pos, 0, t);
-      const todosEl = rootEl.querySelector('[data-role="todos"]');
-      if (todosEl) {
-        const html = todoRowHTML(t);
-        if (row && row.nextSibling) row.insertAdjacentHTML('afterend', html);
-        else todosEl.insertAdjacentHTML('beforeend', html);
-        const newRow = todosEl.children[pos];
-        const input = newRow && newRow.querySelector('[data-role="text"]');
-        if (input) input.focus();
-      }
+  // Commit the ghost row's current value as a new todo inserted at the top
+  // of the list. Called on Enter (keep focus to allow rapid entry) and on
+  // blur (user tabbed / clicked away). Empty input → no-op.
+  function commitGhost(keepFocus) {
+    if (committing) return;
+    committing = true;
+    try {
+      const ghostInput = rootEl && rootEl.querySelector('[data-role="newtodo"]');
+      if (!ghostInput || !noteState) return;
+      const val = ghostInput.value.trim();
+      ghostInput.value = '';
+      if (!val) return;
+      const t = { id: AL.uid(), content: val, done: false };
+      noteState.todos.unshift(t);
+      const ghostRow = rootEl.querySelector('[data-role="ghostrow"]');
+      if (ghostRow) ghostRow.insertAdjacentHTML('afterend', todoRowHTML(t));
       updateCountAndBar();
-      scheduleSave();
+      flushSave(); // meaningful state change — persist immediately
+      if (keepFocus) ghostInput.focus();
+    } finally {
+      committing = false;
+    }
+  }
+
+  function handleKeydown(e) {
+    // Ghost row: Enter commits, Escape clears without committing.
+    // Skip Enter while an IME is composing (e.g. Vietnamese Telex/VNI) —
+    // that Enter is the IME's own commit key, NOT a submit intent.
+    if (e.target.matches('[data-role="newtodo"]')) {
+      if (e.key === 'Enter' && !e.isComposing && e.keyCode !== 229) {
+        e.preventDefault();
+        commitGhost(true);
+        return;
+      }
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        e.target.value = '';
+        e.target.blur();
+        return;
+      }
       return;
     }
-    // Backspace on empty todo → delete it, focus prev row's input.
+
+    // Existing todo: Backspace on empty content → delete + focus prev row's input.
     if (e.target.matches('[data-role="text"]') && e.key === 'Backspace' && e.target.value === '') {
       e.preventDefault();
       if (!noteState) return;
@@ -304,7 +321,10 @@
       const prev = row.previousElementSibling;
       noteState.todos = noteState.todos.filter(x => x.id !== id);
       row.remove();
-      if (prev) {
+      if (prev && prev.classList.contains('DD-todo-ghost')) {
+        const gi = prev.querySelector('[data-role="newtodo"]');
+        if (gi) gi.focus();
+      } else if (prev) {
         const input = prev.querySelector('[data-role="text"]');
         if (input) { input.focus(); input.setSelectionRange(input.value.length, input.value.length); }
       }
@@ -312,10 +332,18 @@
       scheduleSave();
       return;
     }
+
     // Global arrow nav only when not inside a form field.
     if (e.target && /^(input|textarea|select)$/i.test(e.target.tagName)) return;
     if (e.key === 'ArrowLeft') step(-1);
     else if (e.key === 'ArrowRight') step(1);
+  }
+
+  // Blur doesn't bubble → use focusout (which does) on rootEl.
+  function handleFocusOut(e) {
+    if (e.target && e.target.matches('[data-role="newtodo"]')) {
+      commitGhost(false);
+    }
   }
 
   function mount(container) {
@@ -323,6 +351,7 @@
     rootEl.addEventListener('click', handleClick);
     rootEl.addEventListener('input', handleInput);
     rootEl.addEventListener('change', handleChange);
+    rootEl.addEventListener('focusout', handleFocusOut);
     window.addEventListener('keydown', handleKeydown);
     AL.bus.on('select', () => { if (AL.currentRoute() === 'day') render(); });
     render();
@@ -333,6 +362,7 @@
       rootEl.removeEventListener('click', handleClick);
       rootEl.removeEventListener('input', handleInput);
       rootEl.removeEventListener('change', handleChange);
+      rootEl.removeEventListener('focusout', handleFocusOut);
     }
     window.removeEventListener('keydown', handleKeydown);
     flushSave();

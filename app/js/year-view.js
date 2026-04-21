@@ -1,5 +1,6 @@
 // Year view — 12 mini-month mosaic
-// Click any mini-day → selects it, navigates to day view.
+// Click a day cell → DAY view for that date.
+// Click elsewhere in a month card (header/blank) → MONTH view for that month.
 
 (function () {
   'use strict';
@@ -36,13 +37,13 @@
 
     const stats = Holidays.monthStats(year, m);
     return `
-      <div class="YV-month ${isCurrent ? 'current' : ''}" data-month="${m}">
+      <div class="YV-month ${isCurrent ? 'current' : ''}" data-month-card="${m}" title="Xem tháng ${m}">
         <div class="YV-month-head">
           <div style="display:flex;align-items:baseline;gap:8px">
             <span class="YV-month-num">${AL.pad(m)}</span>
             <span class="YV-month-name">${escape(AL.MONTHS_VI[m - 1])}</span>
           </div>
-          <span style="font-size:9px;color:var(--ink-mute);letter-spacing:0.04em">${stats.off}ng</span>
+          <span style="font-size:10px;color:var(--ink-mute);letter-spacing:0.04em">${stats.off}ng</span>
         </div>
         <div class="YV-mini">${dowHeader}${dayCells}</div>
       </div>`;
@@ -89,12 +90,25 @@
       render();
       return;
     }
+    // Day-cell click (inside a month card) → DAY view for that date.
+    // Checked first because [data-cell] is nested inside [data-month-card];
+    // without this order, every day click would be swallowed by the outer card handler.
     const cell = e.target.closest('[data-cell]');
     if (cell) {
       const d = { dd: +cell.dataset.dd, mm: +cell.dataset.mm, yy: +cell.dataset.yy };
       AL.setSelected(d);
       AL.bus.emit('select', d);
       AL.goTo('day');
+      return;
+    }
+    // Month-card click (header or blank area) → MONTH view for that month.
+    const card = e.target.closest('[data-month-card]');
+    if (card) {
+      const mm = +card.dataset.monthCard;
+      const d = { dd: 1, mm, yy: year };
+      AL.setSelected(d);
+      AL.bus.emit('select', d);
+      AL.goTo('month');
     }
   }
 
