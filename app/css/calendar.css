@@ -715,11 +715,13 @@
 .DD-mid-tag .t {
   font-size: 10px; font-weight: 700; padding: 3px 7px;
   letter-spacing: 0.08em; text-transform: uppercase;
+  /* Baseline border reserves 4px vertical space so solid tags align với .tiet (có viền 2px). */
+  border: 2px solid transparent;
 }
 .DD-mid-tag .t.good { background: var(--lime); color: #0a0a0b; }
 .DD-mid-tag .t.bad { background: var(--red); color: #0a0a0b; }
 .DD-mid-tag .t.off { background: var(--magenta); color: #0a0a0b; }
-.DD-mid-tag .t.tiet { background: transparent; color: var(--cyan); border: 2px solid var(--cyan); }
+.DD-mid-tag .t.tiet { background: transparent; color: var(--cyan); border-color: var(--cyan); }
 
 .DD-verdict {
   display: flex; flex-direction: column; align-items: stretch;
