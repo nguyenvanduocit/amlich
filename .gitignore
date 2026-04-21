@@ -1,0 +1,14 @@
+# OMC harness state (ephemeral, per-machine)
+.omc/
+**/.omc/
+
+# macOS
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
+
+# Node (if added later)
+node_modules/
+dist/

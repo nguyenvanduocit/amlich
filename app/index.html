@@ -1,0 +1,530 @@
+<!doctype html>
+<html lang="vi" data-theme="signal">
+<head>
+<meta charset="utf-8">
+<title>Âm Lịch // NULLSECT</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Âm lịch Việt Nam — lịch âm, can chi, tiết khí, giờ hoàng đạo, ghi chú cá nhân.">
+
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700&display=swap">
+
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/calendar.css">
+
+<style>
+  /* App shell — layout chrome. Design tokens come from tokens.css. */
+  html, body { height: 100%; }
+  body {
+    overflow: hidden; /* viewport-fit app */
+    display: flex;
+    flex-direction: column;
+    padding: 24px 24px 32px;
+    box-sizing: border-box;
+  }
+
+  /* The whole "calendar book" — a single bounded frame that houses both
+     the tab bar (top strip) and the active view (body). */
+  #page {
+    width: 100%;
+    max-width: 1280px;
+    margin: 0 auto;
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--bg);
+    border: 3px solid var(--line);
+    box-shadow: 10px 10px 0 0 var(--magenta);
+  }
+
+  /* Tab bar (top strip of the book) */
+  #tabs {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    background: var(--bg-2);
+    border-bottom: 3px solid var(--ink);
+    padding: 0;
+    flex: 0 0 auto;
+    font-family: var(--f-mono);
+  }
+  .tab {
+    font-family: var(--f-mono);
+    font-weight: 700;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    padding: 14px 20px;
+    background: transparent;
+    color: var(--ink-dim);
+    border: 0;
+    border-right: 2px solid var(--ink);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    transition: color 80ms ease, background 80ms ease;
+  }
+  .tab:hover { color: var(--ink); background: var(--bg-3); }
+  .tab.on { color: #0a0a0b; background: var(--lime); }
+  .tab .tab-k { font-size: 10px; color: var(--ink-mute); letter-spacing: 0.2em; }
+  .tab.on .tab-k { color: rgba(10,10,11,0.55); }
+  .tab-meta {
+    margin-left: auto;
+    padding: 0 22px;
+    display: flex;
+    align-items: center;
+    color: var(--ink-mute);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  /* View body — below the tab strip, inside the page frame */
+  #view {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* Responsive — tighter padding on small viewports */
+  @media (max-width: 720px) {
+    body { padding: 12px; }
+    #page { border-width: 2px; box-shadow: 6px 6px 0 0 var(--magenta); }
+  }
+  @media (max-width: 480px) {
+    body { padding: 8px; }
+  }
+
+  /* month view navbtn (shared in hero) */
+  .mv-navbtn {
+    font-family: var(--f-mono);
+    font-size: 10px;
+    font-weight: 700;
+    background: var(--bg-3);
+    border: 2px solid var(--ink);
+    color: var(--ink);
+    padding: 3px 9px;
+    cursor: pointer;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .mv-navbtn:hover { border-color: var(--lime); color: var(--lime); }
+  .mv-navbtn.mv-today {
+    background: var(--lime);
+    border-color: var(--lime);
+    color: #0a0a0b;
+  }
+  .mv-navbtn.mv-today:hover { color: #0a0a0b; }
+  .mv-chi {
+    font-size: 9px;
+    color: var(--ink-mute);
+    letter-spacing: 0.04em;
+    line-height: 1.2;
+  }
+
+  /* year view navbtn */
+  .yv-navbtn {
+    font-family: var(--f-mono);
+    font-size: 10px;
+    font-weight: 700;
+    background: transparent;
+    border: 2px solid var(--ink-mute);
+    color: var(--ink);
+    padding: 3px 8px;
+    cursor: pointer;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-right: 2px;
+  }
+  .yv-navbtn:hover { border-color: var(--lime); color: var(--lime); }
+  .yv-navbtn.yv-today {
+    background: var(--lime);
+    border-color: var(--lime);
+    color: #0a0a0b;
+  }
+
+  /* Theme chip (injected by theme code below) — positioned inside tab bar */
+  #ns-theme-chip {
+    position: relative;
+    top: auto;
+    right: auto;
+    margin: 8px 16px 8px 0;
+    align-self: center;
+  }
+
+  /* ─ TODAY: keep interior clean, add a solid lime sticker corner ───────
+     Strategy: thick 4px lime outline + solid lime "● HÔM NAY" badge
+     bottom-right. No bg tint, no glow — so lun/chi/tag stay readable.
+     When today is also selected, add lime inset ring inside cyan outline. */
+  .vA-cell.today {
+    outline: 4px solid var(--lime);
+    outline-offset: -4px;
+  }
+  .vA-cell.today .sol { color: var(--lime) !important; font-weight: 800; }
+  .vA-cell.today .hd  { color: var(--lime); opacity: 1; font-weight: 800; }
+  .vA-cell.today::before {
+    content: '● HÔM NAY';
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    background: var(--lime);
+    color: #0a0a0b;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.18em;
+    padding: 2px 6px;
+    font-family: var(--f-mono);
+    z-index: 4;
+    pointer-events: none;
+  }
+  .vA-cell.today.selected {
+    outline: 4px solid var(--cyan);
+    outline-offset: -4px;
+    box-shadow: inset 0 0 0 3px var(--lime);
+  }
+
+  /* ─ DAY VIEW · REVAMPED LAYOUT ─────────────────────────────────────────
+     Replace the old 3-col body (hour grid | can-chi trio | notes) with:
+       1. a 4-col horizontal "spec sheet" strip (Ngày/Tháng/Năm/Tiết khí)
+       2. a 2-col main body — Notes (big, LEFT) + Giờ hoàng đạo (RIGHT)
+     This keeps can-chi from ever stretching vertically + gives notes
+     proper real estate. */
+
+  /* Horizontal spec strip */
+  .DD-specs {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    background: var(--bg-2);
+    border: 3px solid var(--ink);
+    flex: 0 0 auto;
+  }
+  .DD-spec {
+    padding: 10px 14px;
+    border-right: 2px solid var(--ink);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+  .DD-spec:last-child { border-right: 0; }
+  .DD-spec::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 4px; height: 100%;
+    background: var(--ink-mute);
+  }
+  .DD-spec.ng::before { background: var(--lime); }
+  .DD-spec.th::before { background: var(--cyan); }
+  .DD-spec.na::before { background: var(--amber); }
+  .DD-spec.ti::before { background: var(--magenta); }
+  .DD-spec-k {
+    font-family: var(--f-mono);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.22em;
+    color: var(--ink-mute);
+    text-transform: uppercase;
+  }
+  .DD-spec-v {
+    font-family: var(--f-display);
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    text-transform: uppercase;
+    margin-top: 2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .DD-spec.ng .DD-spec-v { color: var(--lime); }
+  .DD-spec.th .DD-spec-v { color: var(--cyan); }
+  .DD-spec.na .DD-spec-v { color: var(--amber); }
+  .DD-spec.ti .DD-spec-v { color: var(--magenta); }
+
+  /* 2-col main body: notes (LEFT, bigger) + hour grid (RIGHT) */
+  .DD-body-2col {
+    display: grid;
+    grid-template-columns: 1.3fr 1fr;
+    gap: 12px;
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
+  /* ─ NOTES + CHECKLIST ──────────────────────────────────────────────────
+     Free-text note (textarea) stacked above a structured checklist.
+     All inputs are always editable → live save on 'input' + 'change' events
+     (handled in day-detail.js). */
+  .DD-notes {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    gap: 12px;
+  }
+  .DD-note-text {
+    width: 100%;
+    min-height: 80px;
+    resize: vertical;
+    font-family: var(--f-mono);
+    font-size: 12px;
+    background: var(--bg);
+    color: var(--ink);
+    border: 2px solid var(--ink-mute);
+    padding: 10px;
+    box-sizing: border-box;
+    outline: none;
+    flex: 0 0 auto;
+  }
+  .DD-note-text:focus { border-color: var(--lime); }
+  .DD-note-text::placeholder { color: var(--ink-mute); }
+
+  .DD-checklist {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    border-top: 2px dashed var(--ink-mute);
+    padding-top: 10px;
+    gap: 8px;
+  }
+  .DD-todo-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .DD-todo-title {
+    font-family: var(--f-mono);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.22em;
+    color: var(--lime);
+    text-transform: uppercase;
+  }
+  .DD-todo-count {
+    font-family: var(--f-mono);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--ink-dim);
+    letter-spacing: 0.06em;
+  }
+  .DD-todo-progress {
+    height: 3px;
+    background: var(--bg);
+    border: 1px solid var(--ink-mute);
+    position: relative;
+    flex: 0 0 auto;
+  }
+  .DD-todo-bar {
+    position: absolute;
+    top: 0; left: 0; bottom: 0;
+    background: var(--lime);
+    transition: width 120ms ease;
+  }
+  .DD-todos {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    overflow: auto;
+    min-height: 0;
+  }
+  .DD-todo {
+    display: grid;
+    grid-template-columns: 18px 1fr 20px;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 2px;
+    border-bottom: 1px dashed transparent;
+  }
+  .DD-todo:hover { border-bottom-color: var(--ink-mute); }
+  .DD-todo-check {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    border: 2px solid var(--ink);
+    background: var(--bg);
+    cursor: pointer;
+    position: relative;
+    flex: 0 0 auto;
+  }
+  .DD-todo-check:hover { border-color: var(--lime); }
+  .DD-todo-check:checked {
+    background: var(--lime);
+    border-color: var(--lime);
+  }
+  .DD-todo-check:checked::after {
+    content: '';
+    position: absolute;
+    left: 3px; top: -1px;
+    width: 5px; height: 10px;
+    border: solid #0a0a0b;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+  }
+  .DD-todo-text {
+    font-family: var(--f-mono);
+    font-size: 13px;
+    background: transparent;
+    color: var(--ink);
+    border: 0;
+    outline: none;
+    padding: 4px 2px;
+    width: 100%;
+    min-width: 0;
+  }
+  .DD-todo-text::placeholder { color: var(--ink-mute); }
+  .DD-todo-text:focus { color: var(--ink); }
+  .DD-todo.done .DD-todo-text {
+    text-decoration: line-through;
+    color: var(--ink-mute);
+  }
+  .DD-todo-del {
+    background: transparent;
+    border: 0;
+    color: var(--ink-mute);
+    font-size: 16px;
+    line-height: 1;
+    padding: 2px 4px;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 80ms ease, color 80ms ease;
+    font-family: var(--f-mono);
+  }
+  .DD-todo:hover .DD-todo-del,
+  .DD-todo-del:focus { opacity: 1; }
+  .DD-todo-del:hover { color: var(--red); }
+
+  .DD-todo-add {
+    font-family: var(--f-mono);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: var(--ink-dim);
+    background: transparent;
+    border: 2px dashed var(--ink-mute);
+    padding: 8px 12px;
+    cursor: pointer;
+    text-transform: uppercase;
+    text-align: left;
+    transition: all 80ms ease;
+    flex: 0 0 auto;
+  }
+  .DD-todo-add:hover {
+    border-color: var(--lime);
+    color: var(--lime);
+  }
+</style>
+</head>
+<body>
+
+<div id="page">
+  <nav id="tabs" role="tablist" aria-label="Chế độ xem"></nav>
+  <main id="view" aria-live="polite"></main>
+</div>
+
+<!-- vendor logic (pure JS, no deps) -->
+<script src="js/amlich.js"></script>
+<script src="js/holidays.js"></script>
+
+<!-- app state + router glue -->
+<script src="js/shell.js"></script>
+
+<!-- views -->
+<script src="js/month-view.js"></script>
+<script src="js/day-detail.js"></script>
+<script src="js/year-view.js"></script>
+
+<!-- router + mount -->
+<script src="js/app.js"></script>
+
+<!-- theme toggle chip (signal ↔ void) -->
+<script>
+(function () {
+  const KEY = 'nullsect:theme';
+  const THEMES = ['signal', 'void'];
+  function getTheme() {
+    const t = localStorage.getItem(KEY);
+    return THEMES.includes(t) ? t : 'signal';
+  }
+  function setTheme(t) {
+    document.documentElement.setAttribute('data-theme', t);
+    localStorage.setItem(KEY, t);
+    const lbl = document.querySelector('#ns-theme-chip .ns-theme-lbl');
+    if (lbl) lbl.textContent = t.toUpperCase();
+  }
+  document.documentElement.setAttribute('data-theme', getTheme());
+
+  function build() {
+    const chip = document.createElement('button');
+    chip.id = 'ns-theme-chip';
+    chip.type = 'button';
+    chip.setAttribute('aria-label', 'toggle theme');
+    chip.innerHTML = `
+      <style>
+        #ns-theme-chip {
+          font-family: var(--f-mono);
+          font-size: 11px; font-weight: 700;
+          text-transform: uppercase; letter-spacing: 0.12em;
+          color: var(--ink);
+          background: var(--bg-2);
+          border: 2px solid var(--line);
+          padding: 7px 10px 7px 8px;
+          cursor: pointer;
+          display: inline-flex; align-items: center; gap: 8px;
+          box-shadow: 4px 4px 0 0 var(--magenta);
+          transition: transform 80ms ease, box-shadow 80ms ease;
+        }
+        #ns-theme-chip:hover {
+          transform: translate(-1px,-1px);
+          box-shadow: 5px 5px 0 0 var(--magenta);
+        }
+        #ns-theme-chip .ns-theme-ico {
+          width: 10px; height: 10px;
+          background: var(--lime);
+          box-shadow: 0 0 8px var(--lime);
+        }
+        [data-theme="void"] #ns-theme-chip .ns-theme-ico {
+          background: var(--magenta);
+          box-shadow: 0 0 10px var(--magenta);
+        }
+        #ns-theme-chip .ns-theme-k {
+          color: var(--ink-dim);
+          border-left: 1px solid var(--ink-mute);
+          padding-left: 8px; margin-left: 4px;
+          font-size: 10px;
+        }
+      </style>
+      <span class="ns-theme-ico"></span>
+      <span class="ns-theme-lbl">${getTheme().toUpperCase()}</span>
+      <span class="ns-theme-k">⇧D</span>
+    `;
+    chip.addEventListener('click', () => setTheme(getTheme() === 'signal' ? 'void' : 'signal'));
+    document.getElementById('tabs').appendChild(chip);
+  }
+
+  window.addEventListener('keydown', (e) => {
+    if (!e.shiftKey || e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.key !== 'D' && e.key !== 'd') return;
+    const t = e.target;
+    if (t && /^(input|textarea|select)$/i.test(t.tagName)) return;
+    e.preventDefault();
+    setTheme(getTheme() === 'signal' ? 'void' : 'signal');
+  });
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', build);
+  else build();
+})();
+</script>
+
+</body>
+</html>
