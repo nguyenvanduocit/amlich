@@ -34,17 +34,29 @@
   }
 
   function buildHeroHTML(today) {
+    // Solar tháng có thể trải 2 tháng âm lịch — tính cả first/last để hiển thị range chính xác.
     const firstLu = AmLich.convert(1, ym.m, ym.y);
-    const canChiM = AmLich.canChiThang(ym.m, ym.y);
-    const canChiY = AmLich.canChiNam(ym.y);
+    const lastDay = new Date(ym.y, ym.m, 0).getDate();
+    const lastLu = AmLich.convert(lastDay, ym.m, ym.y);
+    const sameLuMonth = firstLu.month === lastLu.month
+      && firstLu.leap === lastLu.leap
+      && firstLu.year === lastLu.year;
+    const fSfx = firstLu.leap ? '(N)' : '';
+    const lSfx = lastLu.leap  ? '(N)' : '';
+    const luMonthLabel = sameLuMonth
+      ? `T${firstLu.month}${fSfx}`
+      : `T${firstLu.month}${fSfx}–T${lastLu.month}${lSfx}`;
+    // Can chi tháng/năm theo dữ liệu âm lịch THẬT (không phải solar m/y) — sửa bug hiển thị cũ.
+    const canChiY = AmLich.canChiNam(firstLu.year);
+    const canChiM = AmLich.canChiThang(firstLu.month, firstLu.year);
     const tietNow = AmLich.getTietKhi(AmLich.jdFromDate(today.dd, today.mm, today.yy));
     return `
       <div class="vC-hero">
         <div class="vC-hero-left">
-          <div class="vC-m-num">T${ym.m}<span class="slash">/</span><small>${ym.y}</small></div>
+          <div class="vC-m-num">${escape(luMonthLabel)}<span class="slash">/</span><small>${escape(canChiY.toUpperCase())}</small></div>
           <div style="flex:1;display:flex;flex-direction:column;gap:4px;min-width:0">
             <div class="vC-m-sub">
-              ÂM LỊCH · THÁNG <b>${firstLu.month}</b> · ${escape(canChiY.toUpperCase())} · ${escape(canChiM.toUpperCase())}
+              ÂM LỊCH · <b>${escape(canChiM.toUpperCase())}</b> · DL T${ym.m}/${ym.y}
             </div>
             <div style="display:flex;gap:6px;align-items:center">
               <button data-act="prev"  class="mv-navbtn">« prev</button>

@@ -464,6 +464,7 @@
   letter-spacing: -0.05em;
   line-height: 0.82;
   flex: 0 0 auto;
+  white-space: nowrap;
 }
 .vC-m-num .slash { color: var(--magenta); }
 .vC-m-num small { font-size: 20px; color: var(--ink-dim); letter-spacing: -0.02em; }
