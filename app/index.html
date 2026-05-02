@@ -211,8 +211,24 @@
     #ns-donate-chip { padding: 5px 6px; font-size: 8px; }
   }
 
-  /* month view navbtn (shared in hero) */
-  .mv-navbtn {
+  /* Can-chi label inside month grid cells (not a nav element). */
+  .mv-chi {
+    font-size: 9px;
+    color: var(--ink-mute);
+    letter-spacing: 0.04em;
+    line-height: 1.2;
+  }
+
+  /* Unified prev/today/next nav — shared by Day, Month, Year views.
+     One component, one label scheme, one keyboard contract (←/→/T).
+     Layout container; inline so each view can place it inside its hero. */
+  .nav-strip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .nav-btn {
     font-family: var(--f-mono);
     font-size: 10px;
     font-weight: 700;
@@ -224,40 +240,13 @@
     letter-spacing: 0.1em;
     text-transform: uppercase;
   }
-  .mv-navbtn:hover { border-color: var(--lime); color: var(--lime); }
-  .mv-navbtn.mv-today {
+  .nav-btn:hover { border-color: var(--lime); color: var(--lime); }
+  .nav-btn--today {
     background: var(--lime);
     border-color: var(--lime);
     color: #0a0a0b;
   }
-  .mv-navbtn.mv-today:hover { color: #0a0a0b; }
-  .mv-chi {
-    font-size: 9px;
-    color: var(--ink-mute);
-    letter-spacing: 0.04em;
-    line-height: 1.2;
-  }
-
-  /* year view navbtn */
-  .yv-navbtn {
-    font-family: var(--f-mono);
-    font-size: 10px;
-    font-weight: 700;
-    background: transparent;
-    border: 2px solid var(--ink-mute);
-    color: var(--ink);
-    padding: 3px 8px;
-    cursor: pointer;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    margin-right: 2px;
-  }
-  .yv-navbtn:hover { border-color: var(--lime); color: var(--lime); }
-  .yv-navbtn.yv-today {
-    background: var(--lime);
-    border-color: var(--lime);
-    color: #0a0a0b;
-  }
+  .nav-btn--today:hover { color: #0a0a0b; }
 
   /* ─ TODAY: keep interior clean, add a solid lime sticker corner ───────
      Strategy: thick 4px lime outline + solid lime "● HÔM NAY" badge

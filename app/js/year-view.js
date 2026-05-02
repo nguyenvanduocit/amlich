@@ -67,10 +67,10 @@
           <div class="YV-canchi">· ${escape(canChiY.toUpperCase())}</div>
           <div class="YV-meta">
             <div><b style="color:var(--lime)">${totalWork}</b> ngày làm · <b style="color:var(--magenta)">${totalOff}</b> ngày nghỉ</div>
-            <div style="margin-top:4px">
-              <button data-act="prev"  class="yv-navbtn">«</button>
-              <button data-act="today" class="yv-navbtn yv-today">HÔM NAY</button>
-              <button data-act="next"  class="yv-navbtn">»</button>
+            <div class="nav-strip" style="margin-top:4px">
+              <button data-act="prev"  class="nav-btn" title="Năm trước (←)">« TRƯỚC</button>
+              <button data-act="today" class="nav-btn nav-btn--today" title="Về năm hôm nay (T)">● HÔM NAY</button>
+              <button data-act="next"  class="nav-btn" title="Năm sau (→)">SAU »</button>
             </div>
           </div>
         </div>
@@ -79,15 +79,17 @@
     `;
   }
 
+  function prev()    { year -= 1; render(); }
+  function next()    { year += 1; render(); }
+  function goToday() { year = AL.today().yy; render(); }
+
   function handleClick(e) {
     const act = e.target.closest('[data-act]');
     if (act) {
       const a = act.dataset.act;
-      const today = AL.today();
-      if (a === 'prev') year -= 1;
-      else if (a === 'next') year += 1;
-      else if (a === 'today') year = today.yy;
-      render();
+      if (a === 'prev') prev();
+      else if (a === 'next') next();
+      else if (a === 'today') goToday();
       return;
     }
     // Day-cell click (inside a month card) → DAY view for that date.
@@ -112,16 +114,28 @@
     }
   }
 
+  // Defensive: skip when focus is inside a form field — year view has none
+  // today, but stays consistent with Day/Month so future additions are safe.
+  function handleKeydown(e) {
+    if (e.target && /^(input|textarea|select)$/i.test(e.target.tagName)) return;
+    if (e.isComposing || e.keyCode === 229) return;
+    if (e.key === 'ArrowLeft') prev();
+    else if (e.key === 'ArrowRight') next();
+    else if (e.key === 't' || e.key === 'T') goToday();
+  }
+
   function mount(container) {
     rootEl = container;
     if (year === null) year = AL.today().yy;
     rootEl.addEventListener('click', handleClick);
+    window.addEventListener('keydown', handleKeydown);
     AL.bus.on('select', () => { if (AL.currentRoute() === 'year') render(); });
     render();
   }
 
   function unmount() {
     if (rootEl) rootEl.removeEventListener('click', handleClick);
+    window.removeEventListener('keydown', handleKeydown);
     rootEl = null;
   }
 

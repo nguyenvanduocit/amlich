@@ -58,10 +58,10 @@
             <div class="vC-m-sub">
               ÂM LỊCH · <b>${escape(canChiM.toUpperCase())}</b> · DL T${ym.m}/${ym.y}
             </div>
-            <div style="display:flex;gap:6px;align-items:center">
-              <button data-act="prev"  class="mv-navbtn">« prev</button>
-              <button data-act="today" class="mv-navbtn mv-today">● HÔM NAY</button>
-              <button data-act="next"  class="mv-navbtn">next »</button>
+            <div class="nav-strip">
+              <button data-act="prev"  class="nav-btn" title="Tháng trước (←)">« TRƯỚC</button>
+              <button data-act="today" class="nav-btn nav-btn--today" title="Về tháng hôm nay (T)">● HÔM NAY</button>
+              <button data-act="next"  class="nav-btn" title="Tháng sau (→)">SAU »</button>
             </div>
           </div>
         </div>
@@ -197,10 +197,21 @@
     }
   }
 
+  // Skip when focus is in a form field (no input fields in month view today,
+  // but stay defensive for future additions like quick-jump / search box).
+  function handleKeydown(e) {
+    if (e.target && /^(input|textarea|select)$/i.test(e.target.tagName)) return;
+    if (e.isComposing || e.keyCode === 229) return;
+    if (e.key === 'ArrowLeft') prev();
+    else if (e.key === 'ArrowRight') next();
+    else if (e.key === 't' || e.key === 'T') goToday();
+  }
+
   function mount(container) {
     rootEl = container;
     if (!ym) init();
     rootEl.addEventListener('click', handleClick);
+    window.addEventListener('keydown', handleKeydown);
     AL.bus.on('select', () => { if (AL.currentRoute() === 'month') render(); });
     AL.bus.on('note', () => { /* month view doesn't reflect notes inline; skip */ });
     render();
@@ -208,6 +219,7 @@
 
   function unmount() {
     if (rootEl) rootEl.removeEventListener('click', handleClick);
+    window.removeEventListener('keydown', handleKeydown);
     rootEl = null;
   }
 

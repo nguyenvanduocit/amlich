@@ -178,9 +178,12 @@
     rootEl.innerHTML = `
       <div class="DD">
         <div class="DD-head">
-          <button class="DD-back" data-act="prev">« ngày trước</button>
+          <div class="nav-strip">
+            <button class="nav-btn" data-act="prev"  title="Ngày trước (←)">« TRƯỚC</button>
+            <button class="nav-btn nav-btn--today" data-act="today" title="Về hôm nay (T)">● HÔM NAY</button>
+            <button class="nav-btn" data-act="next"  title="Ngày sau (→)">SAU »</button>
+          </div>
           <div class="DD-crumb">/DAY / <b>${AL.pad(sel.dd)}.${AL.pad(sel.mm)}.${sel.yy}</b> / LUNAR <b>${lu.day}.${lu.month}</b></div>
-          <button class="DD-back" data-act="next">ngày sau »</button>
         </div>
         ${buildVerdictTop(sel, lu, hd, hols, off, tiet)}
         ${buildSpecSheet(canChiNg, canChiTh, canChiNa, tiet)}
@@ -203,12 +206,22 @@
     render();
   }
 
+  function goToday() {
+    flushSave();
+    const t = AL.today();
+    const nd = { dd: t.dd, mm: t.mm, yy: t.yy };
+    AL.setSelected(nd);
+    AL.bus.emit('select', nd);
+    render();
+  }
+
   // ─ Event handlers ────────────────────────────────────────────────────
   function handleClick(e) {
     const act = e.target.closest('[data-act]');
     if (act) {
       if (act.dataset.act === 'prev') step(-1);
       else if (act.dataset.act === 'next') step(1);
+      else if (act.dataset.act === 'today') goToday();
       return;
     }
 
@@ -333,10 +346,13 @@
       return;
     }
 
-    // Global arrow nav only when not inside a form field.
+    // Global nav only when not inside a form field — Vietnamese IME types
+    // many chars including 'T' so the guard must short-circuit before T-handling.
     if (e.target && /^(input|textarea|select)$/i.test(e.target.tagName)) return;
+    if (e.isComposing || e.keyCode === 229) return;
     if (e.key === 'ArrowLeft') step(-1);
     else if (e.key === 'ArrowRight') step(1);
+    else if (e.key === 't' || e.key === 'T') goToday();
   }
 
   // Blur doesn't bubble → use focusout (which does) on rootEl.

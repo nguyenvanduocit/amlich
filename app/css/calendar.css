@@ -623,12 +623,6 @@
   border-bottom: 3px solid var(--ink);
   padding-bottom: 8px;
 }
-.DD-back {
-  font-size: 11px; color: var(--ink-dim); letter-spacing: 0.08em;
-  text-transform: uppercase; cursor: pointer; background: none; border: 0;
-  font-family: var(--f-mono); font-weight: 700;
-}
-.DD-back:hover { color: var(--lime); }
 .DD-crumb { font-size: 10px; letter-spacing: 0.12em; color: var(--ink-mute); }
 .DD-crumb b { color: var(--lime); }
 .DD-top {
@@ -1125,8 +1119,8 @@
   .vC-tk-big { font-size: 18px; }
   .vC-tk-desc { font-size: 10px; }
 
-  /* Mini nav buttons in hero */
-  .mv-navbtn { padding: 3px 7px; font-size: 9px; }
+  /* Unified nav-strip buttons (≤768) — shared across Day/Month/Year. */
+  .nav-btn { padding: 3px 7px; font-size: 9px; }
 
   /* Stats: 4 → 2×2. Need re-draw borders since the 4-col rule only removed
      the last child's right-border. */
@@ -1160,7 +1154,6 @@
   /* ── Day detail ──────────────────────────────────────────────── */
   .DD { padding: 12px 14px; gap: 10px; }
   .DD-head { flex-wrap: wrap; gap: 8px; padding-bottom: 6px; }
-  .DD-back { font-size: 10px; letter-spacing: 0.06em; }
   .DD-crumb { font-size: 10px; letter-spacing: 0.08em; }
 
   /* Hero: 3 cols (auto/1fr/240px) → 2 cols. Lunar block stretches full
@@ -1232,7 +1225,7 @@
   .YV-year { font-size: 48px; }
   .YV-canchi { font-size: 20px; }
   .YV-meta { font-size: 10px; }
-  .yv-navbtn { padding: 3px 7px; font-size: 9px; }
+  /* (.nav-btn ≤768 rule defined in Month-view block above; year reuses it.) */
 
   /* Grid: 3×4 → 2×6. Rows are auto-sized since the grid no longer fills
      the viewport. */
@@ -1262,7 +1255,7 @@
   .vC-tk-lbl { font-size: 8px; }
   .vC-tk-big { font-size: 16px; }
   .vC-tk-desc { font-size: 9px; }
-  .mv-navbtn { padding: 3px 6px; font-size: 9px; }
+  .nav-btn { padding: 3px 6px; font-size: 9px; }
 
   .vA-stat-val { font-size: 16px; }
   .vA-stat-lbl { font-size: 8px; letter-spacing: 0.08em; }
@@ -1291,7 +1284,6 @@
   /* ── Day detail ──────────────────────────────────────────────── */
   .DD { padding: 10px 12px; gap: 8px; }
   .DD-head { padding-bottom: 4px; gap: 6px; }
-  .DD-back { font-size: 10px; letter-spacing: 0.04em; }
   .DD-crumb { font-size: 9px; letter-spacing: 0.06em; }
 
   /* Hero: 2-col → 1-col full stack (lunar/mid/verdict vertically) */
