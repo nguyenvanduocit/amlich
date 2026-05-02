@@ -222,11 +222,15 @@
   /* Unified prev/today/next nav — shared by Day, Month, Year views.
      One component, one label scheme, one keyboard contract (←/→/T).
      Layout container; inline so each view can place it inside its hero. */
+  /* nowrap: never break onto a 2nd row — wrapping inflates YV-head height
+     and squeezes the YV-grid below it, which made solar+lunar numbers
+     overlap inside the mini-month cells. */
   .nav-strip {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    white-space: nowrap;
   }
   .nav-btn {
     font-family: var(--f-mono);
